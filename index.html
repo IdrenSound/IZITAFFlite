@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IZITAFF</title>
+
+<style>
+/* ===== RESET & BASE ===== */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* 🔒 AUCUN SCROLL */
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  transition: 0.3s;
+}
+
+/* ===== CONTAINER GLOBAL ===== */
+.container {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 20px; /* laisse la place pour la signature */
+  background: white;
+  padding: 10px 15px;
+  border-radius: 10px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  overflow: hidden; /* pas de scroll */
+}
+
+/* ===== ZONE SCROLLABLE INTERNE ===== */
+.scroll-zone {
+  flex: 1;
+  overflow-y: auto; /* scroll interne si écran trop petit */
+  padding-right: 4px;
+}
+
+/* ===== BOUTONS ===== */
+.mode-buttons, .template-buttons, .bottom-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  white-space: pre-wrap;
+}
+
+.mode { background: #666; color: white; font-size: 16px; }
+.template { background: #333; color: white; font-size: 16px; }
+.active { background: #007bff !important; }
+
+/* ===== FORM ===== */
+label {
+  font-weight: bold;
+  margin-top: 8px;
+  display: block;
+}
+
+textarea, input, select {
+  width: 100%;
+  padding: 8px;
+  font-size: 17px; /* compressible */
+  line-height: 1.3em;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  resize: none;
+}
+body:not(.dark) textarea:focus,
+body:not(.dark) input:focus,
+body:not(.dark) select:focus {
+  outline: none !important;
+  box-shadow: inset 0 0 0 1px #000000; /* noir fin */
+  border-color: transparent !important;
+}
+body.dark textarea:focus,
+body.dark input:focus,
+body.dark select:focus {
+  outline: none !important;
+  box-shadow: inset 0 0 0 1px #ffffff; /* blanc fin */
+  border-color: transparent !important;
+}
+
+/* Hauteurs compressibles */
+textarea {
+  height: clamp(32px, 5vh, 60px);
+}
+
+/* ===== CHECKBOXES ===== */
+.checkbox-line {
+  margin-top: 6px;
+}
+
+.checkbox-line label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ===== QUICK MODE ===== */
+#quickModeBlock {
+  display: none;
+  flex-direction: row;
+  gap: 10px;
+}
+
+#quickModeBlock button {
+  width: 100%;
+  padding: clamp(12px, 3vh, 24px);
+  font-size: clamp(16px, 2.2vh, 22px);
+  font-weight: 700;
+  border-radius: 12px;
+  min-height: clamp(60px, 12vh, 110px);
+}
+
+/* ===== BOTTOM BUTTONS ===== */
+.bottom-buttons button {
+  font-size: 15px;
+}
+
+#copyBtn { background: black; color: white; }
+#resetBtn { background: #999; color: white; }
+#darkModeToggle { width: 50px; background: #ddd; }
+
+/* ===== DARK MODE ===== */
+body.dark { background: #121212; color: #e0e0e0; }
+body.dark .container { background: #1e1e1e; }
+body.dark textarea, body.dark input, body.dark select {
+  background: #2a2a2a; color: white; border: 1px solid #444;
+}
+body.dark .mode { background: #444; }
+body.dark .template { background: #555; }
+body.dark .active { background: #0056b3 !important; }
+body.dark #copyBtn { background: #0a84ff; }
+body.dark #resetBtn { background: #555; }
+body.dark #darkModeToggle { background: #444; color: white; }
+
+/* ===== SIGNATURE FIXE ===== */
+.signature {
+  position: fixed;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: #888;
+  opacity: 0.6;
+  pointer-events: none;
+}
+body.dark .signature { color: #666; }
+
+/* ===== ANIMATION ===== */
+@keyframes blinkOnce {
+  0% { opacity: 1; }
+  50% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+.blink { animation: blinkOnce 0.18s ease-in-out; }
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- BOUTONS MODE -->
+  <div class="mode-buttons">
+    <button class="mode active" id="modePre" onclick="setMode('PRE')">MODE PRE</button>
+    <button class="mode" id="modeQuick" onclick="setMode('QUICK')">M002</button>
+  </div>
+
+  <!-- BOUTONS TEMPLATE -->
+  <div class="template-buttons">
+    <button class="template" onclick="copyTemplate('F120')">F120</button>
+    <button class="template" onclick="copyTemplate('F130')">F130</button>
+    <button class="template" onclick="copyTemplate('F140')">F140</button>
+    <button class="template" onclick="copyTemplate('F180')">F180</button>
+    <button class="template" onclick="copyTemplate('D06')">D06</button>
+  </div>
+
+  <!-- ZONE SCROLLABLE -->
+  <div class="scroll-zone">
+
+    <div id="normalBlocks">
+
+      <label>Date souhaitée fournisseur :</label>
+      <input id="date">
+
+      <label id="anomalieLabel">Anomalie Bloquante :</label>
+      <div style="display:flex; gap:4px; align-items:center;">
+        <button class="addPresetBtn" onclick="addAnomaliePreset()">➕</button>
+        <input type="text" id="newAnomalie" placeholder="Ajouter">
+      </div>
+
+      <select id="anomalieSelect" onchange="applyAnomaliePreset()">
+        <option value="">-- Choisir --</option>
+      </select>
+
+      <textarea id="anomalie"></textarea>
+
+      <label>Illico :</label>
+      <select id="illicoSelect" onchange="applyIllicoPreset(this.value)">
+        <option value="">-- Choisir --</option>
+        <option value="À jour + Ping OK">À jour + Ping OK</option>
+        <option value="+ Ping KO">+ Ping KO</option>
+        <option value="Historique">Historique</option>
+      </select>
+
+      <textarea id="illico" placeholder="-- Illico --"></textarea>
+
+      <label>Ce que j'ai fait :</label>
+      <div style="display:flex; gap:4px; align-items:center;">
+        <button class="addPresetBtn" onclick="addFaitPreset()">➕</button>
+        <input type="text" id="newFait" placeholder="Ajouter">
+      </div>
+
+      <select id="presetSelect" onchange="applyPreset()">
+        <option value="">-- Choisir --</option>
+      </select>
+
+      <textarea id="fait"></textarea>
+
+      <div class="checkbox-line">
+        <label><input type="checkbox" id="capellaCheck" onchange="toggleField('capellaBlock', this)"> Capella</label>
+      </div>
+      <div id="capellaBlock" class="optional-block"><textarea id="capella"></textarea></div>
+
+      <div class="checkbox-line">
+        <label><input type="checkbox" id="cpaCheck" onchange="toggleField('cpaBlock', this)"> CPA</label>
+      </div>
+      <div id="cpaBlock" class="optional-block"><textarea id="cpa"></textarea></div>
+
+      <div class="checkbox-line">
+        <label><input type="checkbox" id="expertCheck" onchange="toggleField('expertBlock', this)"> Expert</label>
+      </div>
+      <div id="expertBlock" class="optional-block"><textarea id="expert"></textarea></div>
+
+    </div>
+
+    <div id="quickModeBlock" class="optional-block">
+      <button onclick="copierTexteRapide(this)">M002  ADRESSE RECEVABLE</button>
+      <button onclick="copierTexteRapide(this)">Demande :
+
+Traitement: Bonjour, le changement d'adresse a bien été effectué. Merci pour votre confiance. Cordialement.</button>
+      <button onclick="copierTexteRapide(this)">Bonjour, le changement d'adresse a bien été effectué. Merci pour votre confiance. Cordialement.</button>
+    </div>
+
+  </div>
+
+  <div class="bottom-buttons">
+    <button id="copyBtn" onclick="copierTexte()">Copier tout</button>
+    <button id="resetBtn" onclick="resetAll()">Reset</button>
+    <button id="darkModeToggle" onclick="toggleDarkMode()">🌙</button>
+  </div>
+
+</div>
+
+<div class="signature">© 2026 - Créé par IdrenSound</div>
+
+<script>
+let currentMode = "PRE";
+const presets = {
+  PRE: ["Analyse + 1er appel KO + MV -> Relance","Analyse + 1er appel OK + RDV + SMS"]
+};
+const anomaliePresets = { PRE: [] };
+function setMode(mode){
+  currentMode = mode;
+
+  // Reset visuel des boutons de mode
+  document.querySelectorAll(".mode").forEach(btn => btn.classList.remove("active"));
+  if(mode==="PRE") document.getElementById("modePre").classList.add("active");
+  else if(mode==="QUICK") document.getElementById("modeQuick").classList.add("active");
+
+  const normal = document.getElementById("normalBlocks");
+  const quick = document.getElementById("quickModeBlock");
+
+  if(mode === "QUICK"){
+    normal.style.display = "none";
+    quick.style.display = "flex";
+
+    // Cacher uniquement Copier tout + Reset
+    document.getElementById("copyBtn").style.display = "none";
+    document.getElementById("resetBtn").style.display = "none";
+} 
+else {
+    normal.style.display = "block";
+    quick.style.display = "none";
+
+    // Réafficher Copier tout + Reset (centrés)
+    document.getElementById("copyBtn").style.display = "block";
+    document.getElementById("resetBtn").style.display = "block";
+}
+
+  // 🔒 Cacher uniquement les blocs optionnels du mode normal
+  document.querySelectorAll("#capellaBlock, #cpaBlock, #expertBlock")
+    .forEach(b => b.style.display = "none");
+
+  // 🔄 Décocher toutes les cases
+  document.querySelectorAll("#capellaCheck, #cpaCheck, #expertCheck")
+    .forEach(c => c.checked = false);
+
+  // Réinitialisation des presets si pas en QUICK
+  if(mode !== "QUICK"){
+    const select = document.getElementById("presetSelect");
+    select.innerHTML = '<option value="">-- Choisir --</option>';
+    presets[mode].forEach(val => {
+      const o = document.createElement("option");
+      o.value = o.text = val;
+      select.appendChild(o);
+    });
+
+    updateAnomalieMenu();
+    document.getElementById("anomalieLabel").innerText = "Echecs :";
+    document.getElementById("fait").value = presets[mode][0];
+  }
+}
+function copyTemplate(t){navigator.clipboard.writeText((document.getElementById("expertCheck").checked?t+" - TRANSFERT EXPERT":t+" - SOLDÉ")); showCopyAlert();}
+function toggleField(id,c){document.getElementById(id).style.display=c.checked?"block":"none";}
+function applyPreset(){const v=document.getElementById("presetSelect").value; if(v) document.getElementById("fait").value=v;}
+function applyAnomaliePreset(){const v=document.getElementById("anomalieSelect").value; if(v) document.getElementById("anomalie").value=v;}
+function applyIllicoPreset(v){if(v)document.getElementById("illico").value=v;}
+function addFaitPreset(){const t=document.getElementById("newFait").value.trim(); if(!t)return; presets[currentMode].push(t); setMode(currentMode); document.getElementById("newFait").value="";}
+function addAnomaliePreset(){const t=document.getElementById("newAnomalie").value.trim(); if(!t)return; anomaliePresets[currentMode].push(t); updateAnomalieMenu(); document.getElementById("newAnomalie").value="";}
+function updateAnomalieMenu(){const s=document.getElementById("anomalieSelect"); s.innerHTML='<option value="">-- Choisir --</option>'; anomaliePresets[currentMode].forEach(v=>{const o=document.createElement("option"); o.value=o.text=v; s.appendChild(o);});}
+function copierTexte(){let s=[]; s.push("Date souhaitée fournisseur : "+document.getElementById("date").value); s.push(document.getElementById("anomalieLabel").innerText+" "+document.getElementById("anomalie").value); s.push("Illico : "+document.getElementById("illico").value); s.push("Ce que j'ai fait : "+document.getElementById("fait").value); if(document.getElementById("capellaCheck").checked)s.push("Capella : "+document.getElementById("capella").value); if(document.getElementById("cpaCheck").checked)s.push("Action CPA : "+document.getElementById("cpa").value); if(document.getElementById("expertCheck").checked)s.push("Transfert Expert : "+document.getElementById("expert").value); navigator.clipboard.writeText(s.join("\n")); showCopyAlert();}
+function copierTexteRapide(b){navigator.clipboard.writeText(b.innerText).then(()=>showCopyAlert());}
+function showCopyAlert(){let m=document.createElement("div"); m.innerText="Texte copié !"; m.style.position="fixed"; m.style.bottom="20px"; m.style.left="50%"; m.style.transform="translateX(-50%)"; m.style.background="black"; m.style.color="white"; m.style.padding="8px 16px"; m.style.borderRadius="6px"; m.style.zIndex="999"; document.body.appendChild(m); setTimeout(()=>m.remove(),1500);}
+function resetAll(){
+  document.querySelectorAll("input[type=text],textarea").forEach(e=>e.value="");
+  document.querySelectorAll("input[type=checkbox]").forEach(c=>c.checked=false);
+  document.querySelectorAll(".optional-block").forEach(b=>b.style.display="none");
+  document.getElementById("illicoSelect").selectedIndex = 0;
+  document.getElementById("illico").value = "";
+  setMode("PRE");
+}
+function toggleDarkMode(){document.body.classList.toggle("dark"); const b=document.getElementById("darkModeToggle"); if(document.body.classList.contains("dark")){b.innerText="☀️"; localStorage.setItem("darkMode","on");} else{b.innerText="🌙"; localStorage.setItem("darkMode","off");}}
+window.onload=function(){if(localStorage.getItem("darkMode")==="on"){document.body.classList.add("dark");document.getElementById("darkModeToggle").innerText="☀️";}}; setMode("PRE");
+document.addEventListener("click", function(e) {
+  if (e.target.matches(".addPresetBtn, #quickModeBlock button, .template, #copyBtn, #resetBtn")) {
+    e.target.classList.add("blink");
+    e.target.addEventListener("animationend", function() {
+      e.target.classList.remove("blink");
+    }, { once: true });
+  }
+});
+</script>
+</body>
+</html>
